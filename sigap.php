@@ -1,0 +1,206 @@
+<?php
+
+return [
+
+    'name' => env('APP_NAME', 'SIGAP Rudenim Surabaya'),
+
+    'tagline' => 'Sistem Informasi & Gerakan Administratif Pengungsi',
+
+    'institution' => [
+        'short' => 'Rudenim Surabaya',
+        'long' => 'Rumah Detensi Imigrasi Surabaya',
+    ],
+
+    /*
+     * Tidak ada lagi setelan mode masuk di sini.
+     *
+     * Mode demo, sakelar mode masuk, dan peran cadangan lewat SIGAP_ACTIVE_ROLE
+     * sudah dihapus seluruhnya. Ketiganya sama-sama dapat membuka akses tanpa
+     * kata sandi, dan yang terakhir bahkan aktif hanya karena satu variabel
+     * lingkungan salah diisi. Satu-satunya jalan masuk kini akun terdaftar.
+     */
+
+    'data' => [
+        'sample_data_enabled' => (bool) env('SIGAP_SAMPLE_DATA_ENABLED', true),
+        'firebase_read_enabled' => (bool) env('SIGAP_FIREBASE_READ_ENABLED', true),
+    ],
+
+    /*
+     * Data acuan operasional Rudenim Surabaya.
+     *
+     * Dikumpulkan di satu tempat agar dapat disesuaikan tanpa menyentuh kode
+     * controller maupun tampilan.
+     */
+    'reference' => [
+
+        /*
+         * Berkas yang wajib dikumpulkan setiap pengungsi. Hanya dua, sesuai
+         * ketentuan yang berlaku di Rudenim Surabaya.
+         */
+        'document_types' => [
+            'Kartu Pengungsi',
+            'Kartu Wajib Lapor',
+        ],
+
+        /*
+         * Penempatan terbagi dua.
+         *
+         *  iom      Pengungsi yang memperoleh fasilitas dari IOM. Seluruhnya
+         *           terpusat di Community House, jadi lokasinya cukup dipilih
+         *           dari daftar.
+         *  mandiri  Pengungsi yang mencari tempat tinggal sendiri. Alamatnya
+         *           berbeda-beda dan perlu dicatat lengkap agar petugas dapat
+         *           menemukannya saat pengawasan lapangan.
+         */
+        'placement_categories' => [
+            'iom' => [
+                'label' => 'Fasilitas IOM',
+                'description' => 'Ditempatkan di Community House yang disediakan IOM.',
+            ],
+            'mandiri' => [
+                'label' => 'Mandiri',
+                'description' => 'Mencari dan membiayai tempat tinggal sendiri.',
+            ],
+        ],
+
+        'community_houses' => [
+            'CH Puspa Agro',
+            'CH Green Bamboo',
+        ],
+
+        /*
+         * Status data pengungsi. Hanya dua yang dipakai sehari-hari: yang
+         * datanya sudah beres, dan yang masih menunggu pemeriksaan supervisor.
+         */
+        'refugee_statuses' => [
+            'Aktif',
+            'Perlu Verifikasi',
+        ],
+
+        /*
+         * Status penempatan, memakai dua nilai yang sama dengan status data
+         * pengungsi supaya petugas tidak perlu menghafal dua istilah berbeda
+         * untuk maksud yang sama.
+         */
+        'placement_statuses' => [
+            'Aktif',
+            'Perlu Verifikasi',
+        ],
+
+        /*
+         * Lokasi hunian pada data pengungsi.
+         *
+         * Dua Community House disebut namanya, sedangkan pengungsi yang
+         * mencari tempat tinggal sendiri cukup ditandai "Pengungsi Mandiri".
+         * Alamat rincinya dicatat pada menu Penempatan, bukan di sini, karena
+         * di sanalah tersedia kolom alamat beserta koordinat dan petunjuk arah.
+         */
+        'refugee_locations' => [
+            'CH Puspa Agro',
+            'CH Green Bamboo',
+            'Pengungsi Mandiri',
+        ],
+    ],
+
+    'firebase' => [
+        'database_url' => env('FIREBASE_DATABASE_URL', 'https://ralf-803d6-default-rtdb.asia-southeast1.firebasedatabase.app/'),
+        'project_id' => 'ralf-803d6',
+        'api_key' => env('FIREBASE_API_KEY'),
+        'auth_domain' => env('FIREBASE_AUTH_DOMAIN', 'ralf-803d6.firebaseapp.com'),
+        'storage_bucket' => env('FIREBASE_STORAGE_BUCKET', 'ralf-803d6.firebasestorage.app'),
+        'storage_disk' => env('FIREBASE_STORAGE_DISK', 'local'),
+        'storage_prefix' => env('FIREBASE_STORAGE_PREFIX', 'documents'),
+
+        /*
+         * Penyimpanan berkas di dalam Realtime Database (mode "rtdb").
+         *
+         * Firebase Storage mensyaratkan paket Blaze, sedangkan Realtime
+         * Database sudah tersedia sejak paket Spark. Pada mode ini isi berkas
+         * disimpan sebagai base64 di node tersendiri, terpisah dari metadata
+         * dokumen, supaya daftar dokumen tetap ringan dibaca.
+         */
+        'storage_rtdb_node' => env('FIREBASE_STORAGE_RTDB_NODE', 'document_files'),
+        'storage_rtdb_max_kb' => (int) env('FIREBASE_STORAGE_RTDB_MAX_KB', 5120),
+        'storage_public_base_url' => env('FIREBASE_STORAGE_PUBLIC_BASE_URL'),
+        'storage_bearer_token' => env('FIREBASE_STORAGE_BEARER_TOKEN'),
+
+        /*
+         * Service account dari Firebase Console -> Project Settings ->
+         * Service accounts -> Generate new private key.
+         *
+         * Boleh diisi JSON apa adanya, JSON yang sudah di-base64, atau jalur
+         * menuju berkas JSON. Dipakai untuk membuat access token berumur pendek
+         * secara otomatis, menggantikan token tetap yang kedaluwarsa tiap jam.
+         */
+        'service_account' => env('FIREBASE_SERVICE_ACCOUNT_JSON'),
+        'database_secret' => env('FIREBASE_DATABASE_SECRET'),
+        'paths' => [
+            'refugees' => '/refugees',
+            'documents' => '/documents',
+            'placements' => '/placements',
+            'audit_trails' => '/audit_trails',
+            'reports' => '/reports',
+            'users' => '/users',
+            'login_attempts' => '/login_attempts',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pembatas percobaan masuk
+    |--------------------------------------------------------------------------
+    |
+    | Hitungannya disimpan di Firebase pada node login_attempts, bukan di cache
+    | Laravel. Di Vercel setiap permintaan berdiri sendiri dan CACHE_STORE
+    | bernilai "array", yang hanya hidup selama satu permintaan — middleware
+    | throttle bawaan tidak akan membatasi apa pun di sana.
+    |
+    | window dan lock dalam detik.
+    |
+    |   per_account : satu akun dari satu alamat IP. Batas utama.
+    |   per_email   : satu akun dari alamat mana pun. Jaring kedua, ambangnya
+    |                 lebih tinggi supaya akun tidak mudah dikunci dengan
+    |                 sengaja oleh orang lain.
+    |
+    | prune_chance : satu dari sekian pencatatan kegagalan dipakai sekalian
+    |                untuk membersihkan catatan yang sudah kedaluwarsa. Isi 1
+    |                agar selalu bersih-bersih, atau 0 untuk mematikannya.
+    |
+    */
+    'login_throttle' => [
+        'enabled' => filter_var(env('SIGAP_LOGIN_THROTTLE', true), FILTER_VALIDATE_BOOLEAN),
+
+        'per_account' => [
+            'max' => (int) env('SIGAP_LOGIN_THROTTLE_MAX', 5),
+            'window' => (int) env('SIGAP_LOGIN_THROTTLE_WINDOW', 900),
+            'lock' => (int) env('SIGAP_LOGIN_THROTTLE_LOCK', 900),
+        ],
+
+        'per_email' => [
+            'max' => (int) env('SIGAP_LOGIN_THROTTLE_EMAIL_MAX', 20),
+            'window' => (int) env('SIGAP_LOGIN_THROTTLE_EMAIL_WINDOW', 900),
+            'lock' => (int) env('SIGAP_LOGIN_THROTTLE_EMAIL_LOCK', 1800),
+        ],
+
+        'prune_chance' => (int) env('SIGAP_LOGIN_THROTTLE_PRUNE_CHANCE', 20),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Syarat kata sandi
+    |--------------------------------------------------------------------------
+    |
+    | Hanya panjang minimalnya yang diatur, tanpa kewajiban mencampur huruf
+    | besar, angka, dan tanda baca. Syarat campuran semacam itu cenderung
+    | menghasilkan kata sandi pendek yang mudah ditebak mesin namun sulit
+    | diingat orang, sementara panjang menambah kekuatan jauh lebih banyak.
+    |
+    | Batas atasnya tidak dapat disetel: bcrypt hanya memperhitungkan 72 bita
+    | pertama, jadi 72 selalu menjadi batas maksimal.
+    |
+    */
+    'password' => [
+        'minimum' => (int) env('SIGAP_PASSWORD_MINIMUM', 12),
+    ],
+
+];
